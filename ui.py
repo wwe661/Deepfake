@@ -1,3 +1,4 @@
+import requests
 import streamlit as st
 import time
 from PIL import Image
@@ -82,18 +83,32 @@ confidence = 0
 # Check button and processing
 if st.button("Check Authenticity"):
     if uploaded_file is not None:
+        
         # Show loading state
         with st.spinner("Analyzing file contents..."):
             # Simulate processing time
             time.sleep(2)
             
-            # Random result for demo (in real app, replace with your detection logic)
-            import random
-            is_real = random.choice([True, False])
-            confidence = random.randint(65, 98)
+            # Send file to backend for prediction
+            print("predicting...")
+            files = {"file": uploaded_file.getvalue()}
             
+            response = requests.post("http://localhost:5000/predict", files={"file": uploaded_file})
+
+            if response.status_code == 200:
+                result = response.json()["prediction"][0]
+                st.success(f"Prediction: {result}")
+            else:
+                st.error("Error: Could not get prediction")
+                
+            print(result)
+            
+            # Random result for demo (in real app, replace with your detection logic)
+            is_real = True if  result[0] > 0.5 else False
+            
+            confidence = result[0] * 100 if is_real else (1 - result[0]) * 100
             result = {
-                "is_real": is_real,
+                "is_real": True,
                 "confidence": confidence,
                 "file_type": uploaded_file.type,
                 "file_size": f"{len(uploaded_file.getvalue()) / 1024:.2f} KB"
