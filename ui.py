@@ -3,6 +3,14 @@ import streamlit as st
 import time
 from PIL import Image
 import io
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Read threshold (default to 0.5 if not set)
+THRESHOLD = float(os.getenv("THRESHOLD", 0.5))
 
 # Configure page
 st.set_page_config(
@@ -92,11 +100,14 @@ if st.button("Check Authenticity"):
             # Send file to backend for prediction
             print("predicting...")
             files = {"file": uploaded_file.getvalue()}
-            
+            # _ = requests.post("http://localhost:5000/debug_preprocess", files={"file": uploaded_file})  # for debugging
             response = requests.post("http://localhost:5000/predict", files={"file": uploaded_file})
 
             if response.status_code == 200:
                 result = response.json()["prediction"][0]
+                print("response :",response.json())
+                result = round(result[0],4)
+                debug_images = response.json().get("paths", {})
                 st.success(f"Prediction: {result}")
             else:
                 st.error("Error: Could not get prediction")
@@ -104,11 +115,10 @@ if st.button("Check Authenticity"):
             print(result)
             
             # Random result for demo (in real app, replace with your detection logic)
-            is_real = True if  result[0] > 0.5 else False
-            
-            confidence = result[0] * 100 if is_real else (1 - result[0]) * 100
+            is_real = True if  result > THRESHOLD else False
+            confidence = result * 100 if is_real else (1 - result) * 100
             result = {
-                "is_real": True,
+                "is_real": is_real,
                 "confidence": confidence,
                 "file_type": uploaded_file.type,
                 "file_size": f"{len(uploaded_file.getvalue()) / 1024:.2f} KB"
@@ -142,14 +152,21 @@ if result:
         st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
     
     # Add detailed analysis section (placeholder for real implementation)
-    st.expander("Detailed Analysis").write("""
-        In a real implementation, this section would contain:
-        - EXIF metadata analysis for images
-        - Error level analysis for potential manipulation
-        - Source verification for documents
-        - Hash comparison with known databases
-        - Digital signature verification
-    """)
+    # st.expander("Detailed Analysis").write("""
+    #     In a real implementation, this section would contain:
+    #     - EXIF metadata analysis for images
+    #     - Error level analysis for potential manipulation
+    #     - Source verification for documents
+    #     - Hash comparison with known databases
+    #     - Digital signature verification
+    # """)
+    with st.expander("Detailed Analysis"):
+        st.write("Preprocessing steps visualized:")
+        name_list = ["original", "clahe", "sharpened", "resized", "Color_converted", "final"]
+        for name in name_list:
+            url = debug_images.get(name)
+            if url:
+                st.image(url, caption=name, use_container_width=False)
 
 # Empty state instructions
 elif uploaded_file is None:
