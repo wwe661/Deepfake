@@ -73,13 +73,13 @@ def load_css():
 load_css()
 
 # App content
-st.markdown('<h1 class="title">🔍 Is It Real?</h1>', unsafe_allow_html=True)
-st.markdown("Upload an image, or video to check its authenticity")
+st.markdown('<h1 class="title">🔍 Is It Real? : DeepFake Detection.</h1>', unsafe_allow_html=True)
+st.markdown("Upload an image , Check if it's a deepfake or not.")
 
 # File upload section
 uploaded_file = st.file_uploader(
     "", 
-    type=["jpg", "jpeg", "png", "gif", "mp4",],
+    type=["jpg", "jpeg", "png"],
     accept_multiple_files=False,
     help="Upload a file to check its authenticity"
 )
